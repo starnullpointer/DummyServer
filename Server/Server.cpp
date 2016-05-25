@@ -1,4 +1,8 @@
-#include "server.h"
+#include "Server.h"
+
+void dummy(){
+    return;
+}
 
 Server::Server()
 {
@@ -19,7 +23,7 @@ Server::Server()
         //error
         cout<<"Server() error: Accept camera_socket failed"<<endl;
     }
-    selector_camera.add(*camera_socket);
+  //  selector_camera.add(*camera_socket);
 
     cout<<"cam connection made"<<endl;
     // init car
@@ -158,10 +162,10 @@ Packet Server::HandlePositionReq(sf::TcpSocket * car) {
         ErrorHandling(checking);
 
 
-        selector_camera.wait();
-        if (selector_camera.isReady(*camera_socket)){
-            cout<<"selector cam is ready"<<endl;
-        }
+        //selector_camera.wait();
+       // if (selector_camera.isReady(*camera_socket)){
+       //     cout<<"selector cam is ready"<<endl;
+      //  }
 
 
 
@@ -222,7 +226,7 @@ Packet Server::HandleDestReq(sf::TcpSocket * car) {
     // if error return error packet
 
     char str[101];
-    strcpy(str, CON_CAR_HERE_IS_DEST);
+    strcpy(str, CON_CAR_YOUR_DEST);
     strcat(str, "4056 4056 }");
 
     checking = car->send(str, strlen(str)+1);
