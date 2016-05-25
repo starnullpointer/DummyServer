@@ -1,0 +1,3 @@
+[submodule "CarProjCommon"]
+	path = CarProjCommon
+	url = https://github.com/starnullpointer/CarProjCommon
