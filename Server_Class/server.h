@@ -11,11 +11,9 @@
 
 using namespace std;
 
-void dummy();
-
 class Server
 {
-    public:
+public:
     Server();
 
     void Init();
@@ -30,20 +28,24 @@ class Server
     void PrintPacket(const Packet & printMe);
     void ErrorHandling(sf::Socket::Status checking);
 
+private:
     sf::IpAddress ip;
     string id;
-
     // camera
     int camera_port;
     sf::TcpListener listener_camera;
     sf::TcpSocket *camera_socket;
+    sf::SocketSelector selector_camera; //remove
 
     // car
     int car_port;
     list<sf::TcpSocket*> cars;
     sf::TcpListener listener_car;
     sf::SocketSelector selector_car;
+
 };
+
+
 
 
 #endif // SERVER_H

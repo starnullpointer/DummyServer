@@ -5,7 +5,7 @@
 #include <SFML/Network.hpp>
 #include <sstream>
 #include <vector>
-#include "Server/Server.h"
+#include "../Server_Class/server.h"
 
 
 using namespace std;
@@ -17,11 +17,10 @@ int getNum(vector<string>& v);
 //3141
 int main() {
 
-   Server s;
-   dummy();
+    Server server;
 
     while (true) {
-  //      server.Update();
+        server.Update();
     }
 }
 

@@ -1,8 +1,4 @@
-#include "Server.h"
-
-void dummy(){
-    return;
-}
+#include "server.h"
 
 Server::Server()
 {
@@ -10,6 +6,8 @@ Server::Server()
     camera_socket = new sf::TcpSocket;
     ip = sf::IpAddress::getLocalAddress();
     id = "server";
+
+    cout<<"Ip: "<<ip<<endl; //mphone on m's laptop: 192.168.43.249
 
     // init camera
     camera_port = 2718;  // changed to test
@@ -23,7 +21,7 @@ Server::Server()
         //error
         cout<<"Server() error: Accept camera_socket failed"<<endl;
     }
-  //  selector_camera.add(*camera_socket);
+    selector_camera.add(*camera_socket);
 
     cout<<"cam connection made"<<endl;
     // init car
@@ -31,7 +29,7 @@ Server::Server()
     listener_car.listen(car_port);
     //figure out selector_camera
     selector_car.add(listener_car);
-    cout<< "care connection made"<<endl;
+    cout<< "listener for car added"<<endl;
 
 }
 
@@ -104,7 +102,8 @@ void Server::HandleCarData(){
                 else{
                     cout<< "Error: Invalid Packet Sent"<<endl;
                 }
-                                
+
+                cout<<"Message we are sending to car: "<<response.Message<<endl;
                 //response
                 client.send(response.Message, strlen(response.Message) + 1);
 
@@ -156,16 +155,15 @@ Packet Server::HandlePositionReq(sf::TcpSocket * car) {
         cout<<"2 HandleLocationRequest: recieved: "<<COMM_LIGHT_IS_ON<<endl;
         //ask camera for location of car
 
-
-
         checking = camera_socket->send(CON_CAM_REQ_POS, strlen(CON_CAM_REQ_POS)+1);
+        cout<<"2 HandleLocationRequest: sent: "<<CON_CAM_REQ_POS<<endl;
         ErrorHandling(checking);
 
 
-        //selector_camera.wait();
-       // if (selector_camera.isReady(*camera_socket)){
-       //     cout<<"selector cam is ready"<<endl;
-      //  }
+        selector_camera.wait();
+        if (selector_camera.isReady(*camera_socket)){
+            cout<<"selector cam is ready"<<endl;
+        }
 
 
 
@@ -197,9 +195,11 @@ Packet Server::HandlePositionReq(sf::TcpSocket * car) {
         cout<<"p.message: "<<p.Message<<endl;
 
        if(strcmp(p.Command, COMM_HERE_IS_POS)==0){
+            p.MakeMessage("Con", "Car", COMM_YOUR_POS);
             cout<<"4 HandleLocationRequest: after sending: "<<COMM_HERE_IS_POS<<endl;
-            p.MakeMessage("Con", "Car", CON_CAR_YOUR_POS);
-        }
+            cout<<"Print P Message in HandlePosition funciton before return: "<<p.Message<<endl;
+            return p;
+       }
        else {
             cout<<"BAD RESPONSE FROM CAR  expected: HereIsPos  recieved: "<<p.Command<<endl;
 
@@ -226,7 +226,7 @@ Packet Server::HandleDestReq(sf::TcpSocket * car) {
     // if error return error packet
 
     char str[101];
-    strcpy(str, CON_CAR_YOUR_DEST);
+    strcpy(str, CON_CAR_HERE_IS_DEST);
     strcat(str, "4056 4056 }");
 
     checking = car->send(str, strlen(str)+1);
@@ -260,9 +260,9 @@ void Server::ErrorHandling(sf::Socket::Status checking){
     else if (checking == sf::Socket::NotReady){
         cout<<"not ready"<<endl;
     }
-    else if ( checking == sf::Socket::Partial){
-        cout<<"partial"<<endl;
-    }
+//    else if ( checking == sf::Socket::Partial){
+//        cout<<"partial"<<endl;
+//    }
     else if ( checking == sf::Socket::Disconnected){
         cout<<"disconnected"<<endl;
     }
