@@ -10,7 +10,7 @@ Server::Server()
     cout<<"Ip: "<<ip<<endl; //mphone on m's laptop: 192.168.43.249
 
     // init camera
-    camera_port = 2718;  // changed to test
+    camera_port = 2720;  // changed to test
     // bind a listener to port
     cout<<"past cam port"<<endl;
     if(listener_camera.listen(camera_port) != sf::Socket::Done){
@@ -194,6 +194,10 @@ Packet Server::HandlePositionReq(sf::TcpSocket * car) {
         cout<<"after Packer constructor: cam_received"<<endl;
         cout<<"p.message: "<<p.Message<<endl;
 
+        x = atof(p.Other[0]);
+        y = atof(p.Other[1]);
+        cout<<"x: ("<<x<<","<<y<<")"<<endl;
+
        if(strcmp(p.Command, COMM_HERE_IS_POS)==0){
             p.MakeMessage("Con", "Car", COMM_YOUR_POS);
             cout<<"4 HandleLocationRequest: after sending: "<<COMM_HERE_IS_POS<<endl;
@@ -226,9 +230,30 @@ Packet Server::HandleDestReq(sf::TcpSocket * car) {
     // if error return error packet
 
     char str[101];
-    strcpy(str, CON_CAR_HERE_IS_DEST);
-    strcat(str, "4056 4056 }");
+    strcpy(str, CON_CAR_YOUR_DEST);
 
+    //pick new random destination
+    //1024 768
+    char destX[20];
+    char destY[20];
+//    int newX=rand()%(1000-0 + 1) + 0;
+//    int newY=rand()%(700-0 + 1) + 0;
+    double newX=x_dest;
+    double newY=y_dest;
+    string x,y;
+    x=to_string(newX);
+    y=to_string(newY);
+
+    strcpy(destX,x.c_str());
+    strcpy(destY,y.c_str());
+
+    strcat(str,destX);
+    strcat(str," ");
+    strcat(str,destY);
+    strcat(str," }");
+//    strcat(str, "4056 4056 }");
+
+    cout<<"Car new Destination: "<<str<<endl;
     checking = car->send(str, strlen(str)+1);
     ErrorHandling(checking);
     //wait for car to say light on
@@ -269,5 +294,98 @@ void Server::ErrorHandling(sf::Socket::Status checking){
     else{
         cout<<"error"<<endl;
     }
+}
+
+void Server::checkEvent()
+{
+    if(!isEvent){
+        isEvent=window.pollEvent(event);
+    }
+}
+
+//sfml drawing car
+void Server::Initial_Window()
+{
+    window.create(sf::VideoMode(1200,750),"Car");
+    window.setFramerateLimit(60);
+    newdot.setFillColor(sf::Color::Red);
+    newdot.setRadius(5);
+    newdot.setOrigin(sf::Vector2f(2.5,2.5));
+
+    destdot.setFillColor(sf::Color::Blue);
+    destdot.setRadius(5);
+    destdot.setOrigin(sf::Vector2f(2.5,2.5));
+    destdot.setPosition(sf::Vector2f(900,600));
+
+    x_dest=900;
+    y_dest=600;
+}
+
+
+void Server::Draw()
+{
+    window.draw(destdot);
+    window.draw(dots[dots.size()-1]);
+    for(int i=0;i<dots.size()-1;i++){
+        sf::Vertex line[] =
+        {
+            sf::Vertex(sf::Vector2f(dots[i].getPosition().x,dots[i].getPosition().y)),
+            sf::Vertex(sf::Vector2f(dots[i+1].getPosition().x,dots[i+1].getPosition().y))
+        };
+        window.draw(line,2,sf::Lines);
+    }
+}
+
+void Server::update_graphics()
+{
+    while (window.isOpen()){
+//        checkEvent();
+        Update();
+//        checkEvent();
+        ProcessEventsForDrawing();
+        update_drawing();
+        render();
+    }
+}
+
+void Server::ProcessEventsForDrawing()
+{
+//    sf::Event event;
+    while (window.pollEvent(event)){//window.pollEvent(event)
+        switch(event.type){
+        case sf::Event::Closed:
+            window.close();
+            listener_camera.close();
+            listener_car.close();
+//            isEvent=false;
+            break;
+        case sf::Event::MouseButtonPressed:
+            if(sf::Mouse::isButtonPressed(sf::Mouse::Left)){
+                x_dest=sf::Mouse::getPosition().x;
+                y_dest=sf::Mouse::getPosition().y;
+            }
+//            isEvent=false;
+            break;
+        default:
+            break;
+        }
+//        checkEvent();
+    }
+}
+
+void Server::update_drawing()
+{
+    if(x!=1023 && y!=1023){
+        newdot.setPosition(x,y);
+        dots.push_back(newdot);
+    }
+    destdot.setPosition(x_dest,y_dest);
+}
+
+void Server::render()
+{
+    window.clear();
+    Draw();
+    window.display();
 }
 

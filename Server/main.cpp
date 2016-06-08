@@ -16,11 +16,13 @@ int getNum(vector<string>& v);
 
 //3141
 int main() {
-
+    srand(time(0));
     Server server;
+    server.Initial_Window();
 
     while (true) {
-        server.Update();
+        server.update_graphics();
+//        server.Update();
     }
 }
 
