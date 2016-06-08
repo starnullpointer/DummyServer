@@ -30,9 +30,9 @@ public:
     void HandleCarData();
     Packet HandlePositionReq(sf::TcpSocket * car);
     Packet HandleDestReq(sf::TcpSocket * car);
+    Packet HandleCmdReq(sf::TcpSocket * car);
     void PrintPacket(const Packet & printMe);
     void ErrorHandling(sf::Socket::Status checking);
-    void checkEvent();
 
     //sfml drawing
     void Initial_Window();
@@ -41,12 +41,13 @@ public:
     void ProcessEventsForDrawing();
     void update_drawing();
     void render();
+    double ConvertMotorValue(double coordinate);
     sf::RenderWindow window;
+    int ScreenSize=1200;
     sf::CircleShape newdot;
     vector<sf::CircleShape> dots;
     sf::CircleShape destdot;
     sf::Event event;
-    bool isEvent;
 
 private:
     sf::IpAddress ip;

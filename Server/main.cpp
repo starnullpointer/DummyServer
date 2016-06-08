@@ -6,13 +6,9 @@
 #include <sstream>
 #include <vector>
 #include "../Server_Class/server.h"
-
-
 using namespace std;
 
-
 int getNum(vector<string>& v);
-
 
 //3141
 int main() {

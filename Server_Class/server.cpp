@@ -10,13 +10,14 @@ Server::Server()
     cout<<"Ip: "<<ip<<endl; //mphone on m's laptop: 192.168.43.249
 
     // init camera
-    camera_port = 2720;  // changed to test
+//    camera_port = 2718;  // changed to test
     // bind a listener to port
     cout<<"past cam port"<<endl;
-    if(listener_camera.listen(camera_port) != sf::Socket::Done){
+    if(listener_camera.listen(cam_port) != sf::Socket::Done){
         // error
         cout<<"Server() error: listen camera_port failed"<<endl;
     }
+    cout<<"listening on port: "<<cam_port<<endl;
     if(listener_camera.accept(*camera_socket) != sf::Socket::Done){
         //error
         cout<<"Server() error: Accept camera_socket failed"<<endl;
@@ -49,7 +50,6 @@ void Server::Update() {
         }
     }
 }
-
 
 void Server::HandleIncomingConnection(){
     sf::TcpSocket* client = new sf::TcpSocket;
@@ -99,14 +99,12 @@ void Server::HandleCarData(){
                     cout<<"in handle dest"<<endl;
                     response = HandleDestReq(*it);
                 }
+                else if (strcmp(recieved.Message, CAR_CON_REQ_CMD) == 0){
+                    response = HandleCmdReq(*it);
+                }
                 else{
                     cout<< "Error: Invalid Packet Sent"<<endl;
                 }
-
-                cout<<"Message we are sending to car: "<<response.Message<<endl;
-                //response
-                client.send(response.Message, strlen(response.Message) + 1);
-
             }
             // need to make other case for status (like disconnected, partcial...)
             else {
@@ -123,7 +121,6 @@ void Server::HandleCarData(){
         }
     }
 }
-
 
 Packet Server::HandlePositionReq(sf::TcpSocket * car) {
     //car turn on light
@@ -202,7 +199,7 @@ Packet Server::HandlePositionReq(sf::TcpSocket * car) {
             p.MakeMessage("Con", "Car", COMM_YOUR_POS);
             cout<<"4 HandleLocationRequest: after sending: "<<COMM_HERE_IS_POS<<endl;
             cout<<"Print P Message in HandlePosition funciton before return: "<<p.Message<<endl;
-            return p;
+            checking = car->send(p.Message,strlen(p.Message)+1);
        }
        else {
             cout<<"BAD RESPONSE FROM CAR  expected: HereIsPos  recieved: "<<p.Command<<endl;
@@ -265,8 +262,35 @@ Packet Server::HandleDestReq(sf::TcpSocket * car) {
 
 //    p = Packet(received);
 //    cout<<"1 HandleLocationRequest: after sending: "<<CON_CAR_TURN_LIGHT_ON<<" recieved: "<<p.Command<<endl;
+}
 
+Packet Server::HandleCmdReq(sf::TcpSocket * car) {
+    Packet p;
+    char received[101];
+    size_t size;
+    sf::Socket::Status checking;
+    char str[101];
+    strcpy(str,CON_CAR_YOUR_CMD);
+    char leftSpeed[20];
+    char rightSpeed[20];
+    double left=ConvertMotorValue(sf::Mouse::getPosition().x);
+    double right=ConvertMotorValue(sf::Mouse::getPosition().y);
+    string leftString,rightString;
+    leftString=to_string(left);
+    rightString=to_string(right);
 
+    strcpy(leftSpeed,leftString.c_str());
+    strcpy(rightSpeed,rightString.c_str());
+
+    strcat(str,leftSpeed);
+    strcat(str," ");
+    strcat(str,rightSpeed);
+    strcat(str,"}");
+
+    cout<<"Car LeftMotor: "<<left<<
+          ", RightMotor: "<<right<<endl;
+    checking = car->send(str,strlen(str)+1);
+    ErrorHandling(checking);
 }
 
 void Server::PrintPacket(const Packet & printMe){
@@ -296,29 +320,22 @@ void Server::ErrorHandling(sf::Socket::Status checking){
     }
 }
 
-void Server::checkEvent()
-{
-    if(!isEvent){
-        isEvent=window.pollEvent(event);
-    }
-}
-
 //sfml drawing car
 void Server::Initial_Window()
 {
-    window.create(sf::VideoMode(1200,750),"Car");
+    window.create(sf::VideoMode(ScreenSize,ScreenSize),"Car");
     window.setFramerateLimit(60);
     newdot.setFillColor(sf::Color::Red);
     newdot.setRadius(5);
     newdot.setOrigin(sf::Vector2f(2.5,2.5));
 
-    destdot.setFillColor(sf::Color::Blue);
+    x_dest=900;
+    y_dest=600;
+
+    destdot.setFillColor(sf::Color::Yellow);
     destdot.setRadius(5);
     destdot.setOrigin(sf::Vector2f(2.5,2.5));
     destdot.setPosition(sf::Vector2f(900,600));
-
-    x_dest=900;
-    y_dest=600;
 }
 
 
@@ -339,9 +356,7 @@ void Server::Draw()
 void Server::update_graphics()
 {
     while (window.isOpen()){
-//        checkEvent();
         Update();
-//        checkEvent();
         ProcessEventsForDrawing();
         update_drawing();
         render();
@@ -350,26 +365,22 @@ void Server::update_graphics()
 
 void Server::ProcessEventsForDrawing()
 {
-//    sf::Event event;
     while (window.pollEvent(event)){//window.pollEvent(event)
         switch(event.type){
         case sf::Event::Closed:
             window.close();
             listener_camera.close();
             listener_car.close();
-//            isEvent=false;
             break;
         case sf::Event::MouseButtonPressed:
             if(sf::Mouse::isButtonPressed(sf::Mouse::Left)){
                 x_dest=sf::Mouse::getPosition().x;
                 y_dest=sf::Mouse::getPosition().y;
             }
-//            isEvent=false;
             break;
         default:
             break;
         }
-//        checkEvent();
     }
 }
 
@@ -389,3 +400,8 @@ void Server::render()
     window.display();
 }
 
+double Server::ConvertMotorValue(double coordinate)
+{
+    double motorValue = 255 * (coordinate / ScreenSize);
+    return motorValue;
+}
